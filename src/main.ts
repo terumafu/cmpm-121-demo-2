@@ -18,51 +18,75 @@ const ctx : CanvasRenderingContext2D | null = canvas.getContext("2d");
 
 const mouse = {active: false, x: 0, y: 0};
 
-const linesDrawn: { x: number; y: number; }[][] = [];
-const redoLines = [];
-let currentLine: { x: number; y: number; }[] | null = null;
 const drawing_changed : Event = new Event("drawing_changed");
+
+let currentLineCommand : LineCommand | null = null;
+const commands : LineCommand[] = [];
+const commandsRedo : LineCommand[] = [];
+
+class LineCommand{
+    points : { x: number; y: number; }[] = [];
+    context : CanvasRenderingContext2D;
+    constructor(x:number,y:number, context: CanvasRenderingContext2D){
+        this.points.push({x:x, y:y});
+        this.context = context;
+    }
+    execute(){
+        this.context.beginPath();
+        //execute to draw the entire line, replaces bulk of redraw
+        this.context.moveTo(this.points[0].x, this.points[1].y);
+        for (let i = 1; i < this.points.length; i ++){
+            this.context.lineTo(this.points[i].x, this.points[i].y);
+        }
+        this.context.stroke();
+    }
+    draw(x:number,y:number){
+        this.points.push({x:x, y:y});
+    }
+}
 
 //add an observer for the canvas to detect mouse clicks
 canvas.addEventListener("mousemove", (event) =>{
     //on mousemove, if mouse is active : draw a line from the last coordinates to the current coordinates
     if (mouse.active == true){
-        //ctx!.beginPath();
-        //ctx!.moveTo(mouse.x, mouse.y);
-        //ctx!.lineTo(event.offsetX, event.offsetY)
-        //ctx!.stroke();
-        //mouse.x = event.offsetX;
-        //mouse.y = event.offsetY;
-        currentLine!.push({x: event.offsetX, y: event.offsetY});
+        currentLineCommand!.draw(event.offsetX, event.offsetY);
+        
         console.log("beforedispatch")
         canvas.dispatchEvent(drawing_changed);
     }
 });
 canvas.addEventListener("mousedown", (event) => {
     //clears redo list
-    redoLines.splice(0, linesDrawn.length);
+    commandsRedo.splice(0, commandsRedo.length);
+    //initializes LineCommand Obj
+    currentLineCommand = new LineCommand(event.offsetX,event.offsetY,ctx!);
 
     mouse.x = event.offsetX;
     mouse.y = event.offsetY;
     mouse.active = true;
-    currentLine = [];
-    linesDrawn.push(currentLine);
+
+
+    commands.push(currentLineCommand);
     
 });
 canvas.addEventListener("mouseup", () => {
+
+    currentLineCommand = null;
     mouse.active = false;
-    currentLine = null;
     //console.log(linesdrawn);
     
 });
 
+const div = document.createElement("div");
+app.append(div);
 //create a button to clear the canvas
 const clearbutton = document.createElement("button");
 clearbutton.innerHTML = "clear";
 app.append(clearbutton);
 
 clearbutton.addEventListener("click", () => {
-    linesDrawn.splice(0, linesDrawn.length);
+    commands.splice(0, commands.length);
+    commandsRedo.splice(0,commandsRedo.length);
     canvas.dispatchEvent(drawing_changed);
 })
 
@@ -72,8 +96,8 @@ undobutton.innerHTML = "undo";
 app.append(undobutton);
 
 undobutton.addEventListener("click", () => {
-    if(linesDrawn.length >= 1){
-        redoLines.push(linesDrawn.pop());
+    if(commands.length >= 1){
+        commandsRedo.push(commands.pop());
         canvas.dispatchEvent(drawing_changed);
     }
 })
@@ -84,32 +108,18 @@ redobutton.innerHTML = "redo";
 app.append(redobutton);
 
 redobutton.addEventListener("click", () => {
-    if(redoLines.length >= 1){
-        linesDrawn.push(redoLines.pop());
+    if(commandsRedo.length >= 1){
+        commands.push(commandsRedo.pop());
         canvas.dispatchEvent(drawing_changed);
     }
 })
 
 function redraw(){
     ctx!.clearRect(0, 0, canvas.width, canvas.height);
-    //redraws the canvas based on lines
-    for (const line of linesDrawn){
-        let prevline = null;
-        //for each line in linesdrawn
-        for (const point of line){
-            //for each point in line
-            if (prevline == null){
-                prevline = point;
-            }
-
-            ctx!.beginPath();
-            ctx!.moveTo(prevline.x, prevline.y);
-            ctx!.lineTo(point.x, point.y)
-            ctx!.stroke();
-            prevline = point;
-        }
-    }
+    
+    commands.forEach((cmd) => cmd.execute());
 }
+
 canvas.addEventListener("drawing_changed", (e) =>{
 
     redraw();
