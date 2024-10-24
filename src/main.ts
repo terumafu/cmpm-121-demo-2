@@ -24,15 +24,19 @@ let currentLineCommand : LineCommand | null = null;
 const commands : LineCommand[] = [];
 const commandsRedo : LineCommand[] = [];
 
+var customLineWidth = 1;
 class LineCommand{
     points : { x: number; y: number; }[] = [];
     context : CanvasRenderingContext2D;
+    linewidth : number = 1;
     constructor(x:number,y:number, context: CanvasRenderingContext2D){
         this.points.push({x:x, y:y});
         this.context = context;
+        this.linewidth = customLineWidth
     }
     execute(){
         this.context.beginPath();
+        this.context.lineWidth = this.linewidth;
         //execute to draw the entire line, replaces bulk of redraw
         this.context.moveTo(this.points[0].x, this.points[1].y);
         for (let i = 1; i < this.points.length; i ++){
@@ -112,6 +116,22 @@ redobutton.addEventListener("click", () => {
         commands.push(commandsRedo.pop());
         canvas.dispatchEvent(drawing_changed);
     }
+})
+//thinline button
+const thinLineButton = document.createElement("button");
+thinLineButton.innerHTML = "thin";
+app.append(thinLineButton);
+
+thinLineButton.addEventListener("click", () => {
+    customLineWidth = 1;
+})
+//thickline button
+const thickLineButton = document.createElement("button");
+thickLineButton.innerHTML = "thick";
+app.append(thickLineButton);
+
+thickLineButton.addEventListener("click", () => {
+    customLineWidth = 10;
 })
 
 function redraw(){
