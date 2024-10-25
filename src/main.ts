@@ -26,11 +26,12 @@ const eventHandler = new EventTarget();
 
 let toolOutline = null;
 
-let currentLineCommand : LineCommand | null = null;
+let currentLineCommand : LineCommand | StickerCommand | null = null;
 const commands = [];
 const commandsRedo = [];
 
-var customLineWidth = 1;
+let stickerBrush : string | null = null;
+let customLineWidth = 1;
 class LineCommand{
     points : { x: number; y: number; }[] = [];
     context : CanvasRenderingContext2D;
@@ -54,6 +55,20 @@ class LineCommand{
         this.points.push({x:x, y:y});
     }
 }
+class StickerCommand{
+    point : {x: number, y:number};
+    context : CanvasRenderingContext2D;
+    emoji : string;
+    constructor(x:number,y:number, context: CanvasRenderingContext2D, emoji: string){
+        this.point = {x:x, y:y};
+        this.context = context;
+        this.emoji = emoji;
+    }
+    execute(){
+        this.context.font = "30px serif";
+        this.context.fillText(this.emoji, this.point.x, this.point.y,);
+    }
+}
 class ToolMovedCommand{
     x : number;
     y : number;
@@ -62,15 +77,20 @@ class ToolMovedCommand{
         this.y = y;
     }
     execute(){
-        ctx!.font = customLineWidth + 5 + "px monospace";
-        ctx!.fillText("I", this.x, this.y);
+        ctx!.font = customLineWidth + 10 + "px monospace";
+        let tempstring = "I";
+        if (stickerBrush){
+            ctx!.font = 20 + "px serif";
+            tempstring = stickerBrush;
+        }
+        ctx!.fillText(tempstring, this.x, this.y);
     }
 }
 
 //add an observer for the canvas to detect mouse clicks
 canvas.addEventListener("mousemove", (event) =>{
     //on mousemove, if mouse is active : draw a line from the last coordinates to the current coordinates
-    if (mouse.active == true){
+    if (mouse.active == true && stickerBrush == null){
         currentLineCommand!.draw(event.offsetX, event.offsetY);
         
         eventHandler.dispatchEvent(drawing_changed);
@@ -86,8 +106,12 @@ canvas.addEventListener("mousedown", (event) => {
     
     commandsRedo.splice(0, commandsRedo.length);
     //initializes LineCommand Obj
-    currentLineCommand = new LineCommand(event.offsetX,event.offsetY,ctx!);
-
+    if (!stickerBrush){
+        currentLineCommand = new LineCommand(event.offsetX,event.offsetY,ctx!);
+    }
+    else{
+        currentLineCommand = new StickerCommand(event.offsetX, event.offsetY, ctx!, stickerBrush);
+    }
     mouse.x = event.offsetX;
     mouse.y = event.offsetY;
     mouse.active = true;
@@ -96,6 +120,7 @@ canvas.addEventListener("mousedown", (event) => {
     commands.push(currentLineCommand);
     toolOutline = null;
     
+    eventHandler.dispatchEvent(drawing_changed);
 });
 canvas.addEventListener("mouseup", () => {
 
@@ -104,6 +129,10 @@ canvas.addEventListener("mouseup", () => {
     //console.log(linesdrawn);
     
 });
+canvas.addEventListener("mouseout", (event) => {
+    eventHandler.dispatchEvent(drawing_changed);
+    redraw();
+  });
 
 const div = document.createElement("div");
 app.append(div);
@@ -118,6 +147,7 @@ clearbutton.addEventListener("click", () => {
     eventHandler.dispatchEvent(drawing_changed);
 })
 
+//BUTTONS
 //UNDO BUTTON
 const undobutton = document.createElement("button");
 undobutton.innerHTML = "undo";
@@ -147,15 +177,37 @@ thinLineButton.innerHTML = "thin";
 app.append(thinLineButton);
 
 thinLineButton.addEventListener("click", () => {
+    stickerBrush = null;
     customLineWidth = 1;
 })
 //thickline button
 const thickLineButton = document.createElement("button");
 thickLineButton.innerHTML = "thick";
 app.append(thickLineButton);
-
 thickLineButton.addEventListener("click", () => {
+    stickerBrush = null;
     customLineWidth = 10;
+})
+//emoji buttons
+const emojiButton = document.createElement("button");
+emojiButton.innerHTML = "😀";
+app.append(emojiButton);
+emojiButton.addEventListener("click", () => {
+    stickerBrush = emojiButton.innerHTML;
+})
+
+const emojiButton2 = document.createElement("button");
+emojiButton2.innerHTML = "🥹";
+app.append(emojiButton2);
+emojiButton2.addEventListener("click", () => {
+    stickerBrush = emojiButton2.innerHTML;
+})
+
+const emojiButton3 = document.createElement("button");
+emojiButton3.innerHTML = "😆";
+app.append(emojiButton3);
+emojiButton3.addEventListener("click", () => {
+    stickerBrush = emojiButton3.innerHTML;
 })
 
 function redraw(){
