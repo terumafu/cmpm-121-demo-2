@@ -12,9 +12,15 @@ app.append(header);
 const canvas = document.createElement("canvas");
 canvas.width = 256;
 canvas.height = 256;
+canvas.style.cursor = "none"; 
 app.append(canvas);
-
-
+//divs
+const div = document.createElement("div");
+app.append(div);
+const divbutton = document.createElement("div");
+app.append(divbutton);
+const custombuttondiv = document.createElement("div");
+app.append(custombuttondiv);
 
 const ctx : CanvasRenderingContext2D | null = canvas.getContext("2d");
 
@@ -29,6 +35,7 @@ let toolOutline = null;
 let currentLineCommand : LineCommand | StickerCommand | null = null;
 const commands = [];
 const commandsRedo = [];
+const stickerlist = [];
 
 let stickerBrush : string | null = null;
 let customLineWidth = 1;
@@ -80,14 +87,14 @@ class ToolMovedCommand{
         ctx!.font = customLineWidth + 10 + "px monospace";
         let tempstring = "I";
         if (stickerBrush){
-            ctx!.font = 20 + "px serif";
+            ctx!.font = 30 + "px serif";
             tempstring = stickerBrush;
         }
         ctx!.fillText(tempstring, this.x, this.y);
     }
 }
 
-//add an observer for the canvas to detect mouse clicks
+//MOUSE OBSERVERS
 canvas.addEventListener("mousemove", (event) =>{
     //on mousemove, if mouse is active : draw a line from the last coordinates to the current coordinates
     if (mouse.active == true && stickerBrush == null){
@@ -130,16 +137,15 @@ canvas.addEventListener("mouseup", () => {
     
 });
 canvas.addEventListener("mouseout", (event) => {
-    eventHandler.dispatchEvent(drawing_changed);
+    toolOutline = new ToolMovedCommand(-10, -10);
     redraw();
   });
 
-const div = document.createElement("div");
-app.append(div);
+
 //create a button to clear the canvas
 const clearbutton = document.createElement("button");
 clearbutton.innerHTML = "clear";
-app.append(clearbutton);
+div.append(clearbutton);
 
 clearbutton.addEventListener("click", () => {
     commands.splice(0, commands.length);
@@ -151,7 +157,7 @@ clearbutton.addEventListener("click", () => {
 //UNDO BUTTON
 const undobutton = document.createElement("button");
 undobutton.innerHTML = "undo";
-app.append(undobutton);
+div.append(undobutton);
 
 undobutton.addEventListener("click", () => {
     if(commands.length >= 1){
@@ -163,7 +169,7 @@ undobutton.addEventListener("click", () => {
 //REDO BUTTON
 const redobutton = document.createElement("button");
 redobutton.innerHTML = "redo";
-app.append(redobutton);
+div.append(redobutton);
 
 redobutton.addEventListener("click", () => {
     if(commandsRedo.length >= 1){
@@ -174,7 +180,7 @@ redobutton.addEventListener("click", () => {
 //thinline button
 const thinLineButton = document.createElement("button");
 thinLineButton.innerHTML = "thin";
-app.append(thinLineButton);
+div.append(thinLineButton);
 
 thinLineButton.addEventListener("click", () => {
     stickerBrush = null;
@@ -183,33 +189,39 @@ thinLineButton.addEventListener("click", () => {
 //thickline button
 const thickLineButton = document.createElement("button");
 thickLineButton.innerHTML = "thick";
-app.append(thickLineButton);
+div.append(thickLineButton);
 thickLineButton.addEventListener("click", () => {
     stickerBrush = null;
     customLineWidth = 10;
 })
 //emoji buttons
-const emojiButton = document.createElement("button");
-emojiButton.innerHTML = "😀";
-app.append(emojiButton);
-emojiButton.addEventListener("click", () => {
-    stickerBrush = emojiButton.innerHTML;
-})
 
-const emojiButton2 = document.createElement("button");
-emojiButton2.innerHTML = "🥹";
-app.append(emojiButton2);
-emojiButton2.addEventListener("click", () => {
-    stickerBrush = emojiButton2.innerHTML;
-})
 
-const emojiButton3 = document.createElement("button");
-emojiButton3.innerHTML = "😆";
-app.append(emojiButton3);
-emojiButton3.addEventListener("click", () => {
-    stickerBrush = emojiButton3.innerHTML;
-})
+createSticker("😀");
+createSticker("🥹");
+createSticker("😆");
 
+function createSticker(sticker:string){
+    let temp = document.createElement("button");
+    temp.innerHTML = sticker;
+    divbutton.append(temp);
+    temp.addEventListener("click", () => {
+        stickerBrush = temp.innerHTML;
+    })
+
+    stickerlist.push(temp);
+}
+//customemoji button
+
+const customSticker = document.createElement("button");
+customSticker.innerHTML = "Custom Sticker";
+custombuttondiv.append(customSticker);
+customSticker.addEventListener("click", () => {
+    const text = prompt("Custom Sticker Text", "");
+    if (text != ""){
+        createSticker(text);
+    }
+})
 function redraw(){
     ctx!.clearRect(0, 0, canvas.width, canvas.height);
     
