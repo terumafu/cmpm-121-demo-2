@@ -38,10 +38,10 @@ const commandsRedo = [];
 const stickerlist = [];
 
 let stickerBrush : string | null = null;
-let customLineWidth = 1;
+let customLineWidth = 4;
 class LineCommand{
     points : { x: number; y: number; }[] = [];
-    linewidth : number = 1;
+    linewidth : number = 4;
     constructor(x:number,y:number){
         this.points.push({x:x, y:y});
         this.linewidth = customLineWidth
