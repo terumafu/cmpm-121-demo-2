@@ -22,7 +22,7 @@ app.append(divbutton);
 const custombuttondiv = document.createElement("div");
 app.append(custombuttondiv);
 
-const ctx : CanvasRenderingContext2D | null = canvas.getContext("2d");
+let ctx : CanvasRenderingContext2D | null = canvas.getContext("2d");
 
 const mouse = {active: false, x: 0, y: 0};
 
@@ -41,22 +41,20 @@ let stickerBrush : string | null = null;
 let customLineWidth = 1;
 class LineCommand{
     points : { x: number; y: number; }[] = [];
-    context : CanvasRenderingContext2D;
     linewidth : number = 1;
-    constructor(x:number,y:number, context: CanvasRenderingContext2D){
+    constructor(x:number,y:number){
         this.points.push({x:x, y:y});
-        this.context = context;
         this.linewidth = customLineWidth
     }
     execute(){
-        this.context.beginPath();
-        this.context.lineWidth = this.linewidth;
+        ctx!.beginPath();
+        ctx!.lineWidth = this.linewidth;
         //execute to draw the entire line, replaces bulk of redraw
-        this.context.moveTo(this.points[0].x, this.points[1].y);
+        ctx!.moveTo(this.points[0].x, this.points[1].y);
         for (let i = 1; i < this.points.length; i ++){
-            this.context.lineTo(this.points[i].x, this.points[i].y);
+            ctx!.lineTo(this.points[i].x, this.points[i].y);
         }
-        this.context.stroke();
+        ctx!.stroke();
     }
     draw(x:number,y:number){
         this.points.push({x:x, y:y});
@@ -64,16 +62,14 @@ class LineCommand{
 }
 class StickerCommand{
     point : {x: number, y:number};
-    context : CanvasRenderingContext2D;
     emoji : string;
-    constructor(x:number,y:number, context: CanvasRenderingContext2D, emoji: string){
+    constructor(x:number,y:number, emoji: string){
         this.point = {x:x, y:y};
-        this.context = context;
         this.emoji = emoji;
     }
     execute(){
-        this.context.font = "30px serif";
-        this.context.fillText(this.emoji, this.point.x, this.point.y,);
+        ctx!.font = "30px serif";
+        ctx!.fillText(this.emoji, this.point.x, this.point.y,);
     }
 }
 class ToolMovedCommand{
@@ -114,10 +110,10 @@ canvas.addEventListener("mousedown", (event) => {
     commandsRedo.splice(0, commandsRedo.length);
     //initializes LineCommand Obj
     if (!stickerBrush){
-        currentLineCommand = new LineCommand(event.offsetX,event.offsetY,ctx!);
+        currentLineCommand = new LineCommand(event.offsetX,event.offsetY);
     }
     else{
-        currentLineCommand = new StickerCommand(event.offsetX, event.offsetY, ctx!, stickerBrush);
+        currentLineCommand = new StickerCommand(event.offsetX, event.offsetY, stickerBrush);
     }
     mouse.x = event.offsetX;
     mouse.y = event.offsetY;
@@ -222,6 +218,33 @@ customSticker.addEventListener("click", () => {
         createSticker(text);
     }
 })
+
+// export
+const exportButton = document.createElement("button")
+exportButton.innerHTML = "export";
+exportButton.addEventListener("click",()=>{
+    const exportcanvas = document.createElement("canvas");
+    exportcanvas.width = 256 * 4;
+    exportcanvas.height = 256 * 4;
+    
+    app.append(exportcanvas);
+    let tempcontext = ctx;
+    ctx = exportcanvas.getContext("2d");
+    ctx!.scale(4,4);
+
+    redraw();
+
+    const anchor = document.createElement("a");
+    anchor.href = exportcanvas.toDataURL("image/png");
+    anchor.download = "sketchpad.png";
+    anchor.click();
+
+    exportcanvas.remove();
+    ctx = tempcontext;
+})
+custombuttondiv.append(exportButton);
+
+
 function redraw(){
     ctx!.clearRect(0, 0, canvas.width, canvas.height);
     
