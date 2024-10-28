@@ -39,15 +39,22 @@ const stickerlist = [];
 
 let stickerBrush : string | null = null;
 let customLineWidth = 4;
+
+let currcolor = `rgb(` + Math.random() * 255 + `,` + Math.random() * 255 + `,` + Math.random() * 255 + `)`;
+
 class LineCommand{
     points : { x: number; y: number; }[] = [];
     linewidth : number = 4;
+    color : string | null= null;
     constructor(x:number,y:number){
         this.points.push({x:x, y:y});
         this.linewidth = customLineWidth
+        this.color = currcolor;
+        
     }
     execute(){
         ctx!.beginPath();
+        ctx!.strokeStyle = this.color;
         ctx!.lineWidth = this.linewidth;
         //execute to draw the entire line, replaces bulk of redraw
         ctx!.moveTo(this.points[0].x, this.points[1].y);
@@ -55,10 +62,12 @@ class LineCommand{
             ctx!.lineTo(this.points[i].x, this.points[i].y);
         }
         ctx!.stroke();
+        
     }
     draw(x:number,y:number){
         this.points.push({x:x, y:y});
     }
+    
 }
 class StickerCommand{
     point : {x: number, y:number};
@@ -111,6 +120,7 @@ canvas.addEventListener("mousedown", (event) => {
     //initializes LineCommand Obj
     if (!stickerBrush){
         currentLineCommand = new LineCommand(event.offsetX,event.offsetY);
+        
     }
     else{
         currentLineCommand = new StickerCommand(event.offsetX, event.offsetY, stickerBrush);
@@ -179,14 +189,16 @@ thinLineButton.innerHTML = "thin";
 div.append(thinLineButton);
 
 thinLineButton.addEventListener("click", () => {
+    currcolor = getRandColor();
     stickerBrush = null;
-    customLineWidth = 1;
+    customLineWidth = 4;
 })
 //thickline button
 const thickLineButton = document.createElement("button");
 thickLineButton.innerHTML = "thick";
 div.append(thickLineButton);
 thickLineButton.addEventListener("click", () => {
+    currcolor = getRandColor();
     stickerBrush = null;
     customLineWidth = 10;
 })
@@ -244,6 +256,10 @@ exportButton.addEventListener("click",()=>{
 })
 custombuttondiv.append(exportButton);
 
+function getRandColor(){
+    return `rgb(` + Math.random() * 255 + `,` + Math.random() * 255 + `,` + Math.random() * 255 + `)`;
+
+}
 
 function redraw(){
     ctx!.clearRect(0, 0, canvas.width, canvas.height);
