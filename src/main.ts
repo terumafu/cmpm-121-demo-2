@@ -202,8 +202,24 @@ thickLineButton.addEventListener("click", () => {
     stickerBrush = null;
     customLineWidth = 10;
 })
-//emoji buttons
 
+// slider for line width 
+
+const slider = document.createElement("input")
+slider.id = "volume";
+slider.type = 'range';
+slider.min = (0).toString();
+slider.max = (20).toString();
+slider.value = (5).toString();
+slider.step = (1).toString();
+
+div.append(slider);
+slider.addEventListener('input', () => {
+    customLineWidth =  parseInt(slider.value, 10);
+    console.log(customLineWidth)
+});
+
+//emoji buttons
 
 createSticker("😀");
 createSticker("🥹");
